@@ -1,23 +1,24 @@
-const { unstable_dev } = require("wrangler");
+const fetch = require('node-fetch');
+const {expect} = require('@jest/globals');
 
 describe("Worker", () => {
-	let worker;
-
-	beforeAll(async () => {
-		worker = await unstable_dev("src/index.js", {
-			experimental: { disableExperimentalWarning: true },
-		});
+	it("return a proof", async () => {
+		const q = '?wallet=0x78B3Ec25D285F7a9EcA8Da8eb6b20Be4d5D70E84';
+		const res = await fetch(`http://127.0.0.1:8787/${q}`);
+		const r = await res.json();
+		expect(r.networkId).toBe('97');
+		expect(r.networkName).toBe('bsc-testnet');
+		expect(r.proof.length).toBe(5);
+	});
+	it("return a proof", async () => {
+		const q = '?wallet=0x78B3Ec25D285F7a9EcA8Da8eb6b20Be4d5D70E84';
+		const o = {
+			'method': 'OPTIONS',
+			'Access-Control-Request-Method': '*',
+			'Access-Control-Request-Headers': '*',
+		};
+		const res = await fetch(`http://127.0.0.1:8787/${q}`, o);
+		expect( res.headers.get('access-control-allow-origin') ).toBe('*');
 	});
 
-	afterAll(async () => {
-		await worker.stop();
-	});
-
-	it("should return Hello World", async () => {
-		const resp = await worker.fetch();
-		if (resp) {
-			const text = await resp.text();
-			expect(text).toMatchInlineSnapshot(`"Hello World!"`);
-		}
-	});
 });

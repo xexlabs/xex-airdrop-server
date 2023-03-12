@@ -12,6 +12,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@openzeppelin/merkle-tree": "^1.0.2"
+    "@openzeppelin/merkle-tree": "^1.0.2",
+    "node-fetch": "2"
   }
 }
