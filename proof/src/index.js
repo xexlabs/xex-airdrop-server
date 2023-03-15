@@ -26,6 +26,7 @@ function checkProof(address) {
         airdrop_data.push([userData[0].toLowerCase(), userData[1]]);
     }
     const tree = merkle.StandardMerkleTree.of(airdrop_data, ["address", "uint256"]);
+    // console.log('root', tree.root);
     const MerkleTreeData = merkle.StandardMerkleTree.load(tree.dump());
 
     const wallet = address.toLowerCase();
@@ -38,7 +39,7 @@ function checkProof(address) {
             return {networkId: networkId, networkName: networkName, proof: proof};
         }
     }
-    return {error: `proof not found.`};
+    return {proof: []};
 }
 
 export default {
