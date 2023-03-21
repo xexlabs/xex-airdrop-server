@@ -26,7 +26,7 @@ function checkProof(address) {
         airdrop_data.push([userData[0].toLowerCase(), userData[1]]);
     }
     const tree = merkle.StandardMerkleTree.of(airdrop_data, ["address", "uint256"]);
-    // console.log('root', tree.root);
+    //console.log('root', tree.root);
     const MerkleTreeData = merkle.StandardMerkleTree.load(tree.dump());
 
     const wallet = address.toLowerCase();
@@ -45,7 +45,7 @@ function checkProof(address) {
 export default {
     async fetch(request, env, ctx) {
         const url = new URL(request.url);
-        console.log(request.method, url);
+        //console.log(request.method, url);
         if (request.method === 'OPTIONS') {
             let respHeaders = {
                 'Access-Control-Allow-Origin': '*',

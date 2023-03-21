@@ -19,6 +19,10 @@ describe("Worker", () => {
 		};
 		const res = await fetch(`http://127.0.0.1:8787/${q}`, o);
 		expect( res.headers.get('access-control-allow-origin') ).toBe('*');
+
+		const proofResponse = await fetch(`http://127.0.0.1:8787/${q}`);
+		const proofData = await proofResponse.json();
+		console.log( proofData);
 	});
 
 });
