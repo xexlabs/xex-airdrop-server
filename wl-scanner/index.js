@@ -1,26 +1,17 @@
 'use strict'
+const {AnkrProvider} = require('@ankr.com/ankr.js');
 const fs = require('fs');
-const Web3 = require('web3');
 const dotenv = require("dotenv");
 dotenv.config()
+const provider = new AnkrProvider(process.env.ANKR)
+const Web3 = require('web3');
 
-const mainAddress = '0xa41A879bcFdd75983a987FD6b68fae37777e8b28';
-const abiMain = JSON.parse(fs.readFileSync("./abi/main-abi.json", "utf8"));
+const mainAddress = '0xa41A879bcFdd75983a987FD6b68fae37777e8b28'.toLowerCase();
+const claimRankTopic = '0xc05062aaca3ffe3bd48e1cd6edc912dff77e39ba1a14999b5e00ec68614b311c';
 const abiMinter = JSON.parse(fs.readFileSync("./abi/minter-abi.json", "utf8"));
 
 
 
-async function processChain(maxUsers, chainName, rpc, mainBlockStart, factoryBlockStart){
-    console.log(`Scanning ${chainName} for ${maxUsers} first minters.`);
-    const web3 = new Web3(rpc);
-    const main = new web3.eth.Contract(abiMain, mainAddress);
-    const lastBlock = parseInt(await web3.eth.getBlockNumber());
-    try {
-        await scanBlockchain(web3, chainName, main, mainBlockStart, lastBlock, maxUsers);
-    }catch(e){
-        console.log(`Error running the chain ${chainName} scan: ${e.toString()}`);
-    }
-}
 async function main() {
     /*
     - ETH: First 500 Unique addresses to mint
@@ -30,72 +21,80 @@ async function main() {
     - FTM: First 2500 Unique addresses to mint
     * */
 
-    // await processChain(1500, 'bsc',`https://rpc.ankr.com/bsc/${process.env.ANKR}`, '25208900', '25208912');
-    // await processChain(1500, 'avalanche',`https://rpc.ankr.com/avalanche/${process.env.ANKR}`, '25570246', '25570259');
-    // await processChain(2500, 'polygon',`https://rpc.ankr.com/polygon/${process.env.ANKR}`, '38669109', '38669138');
-    // await processChain(2500, 'fantom',`https://rpc.ankr.com/fantom/${process.env.ANKR}`, '54668080', '54668094');
-    await processChain(500, 'ethereum',`https://mainnet.infura.io/v3/${process.env.INFURA}`, '16513351', '16513362');
-
+    await processChain(1500, 'bsc', '25208900');
+    await processChain(1500, 'avalanche', '25570246');
+    await processChain(2500, 'polygon', '38669109');
+    await processChain(2500, 'fantom', '54668080');
+    await processChain(500, 'eth', '16513351');
 
 }
-
-
-
-
-async function scanBlockchain(web3, chainName, main, mainBlockStart, lastBlock, maxUsers) {
-    let size = 1000, users = [];
+async function processChain(maxUsers, chainName, mainBlockStart){
+    console.log(`Scanning ${chainName} for ${maxUsers} first minters.`);
+    mainBlockStart = parseInt(mainBlockStart);
+    const web3 = new Web3(`https://rpc.ankr.com/${chainName}/${process.env.ANKR}`);
+    const lastBlock = parseInt(await web3.eth.getBlockNumber());;
+    try {
+        await scanBlockchain(web3, chainName, mainBlockStart, lastBlock, maxUsers);
+    }catch(e){
+        console.log(`Error running the chain ${chainName} scan: ${e.toString()}`);
+    }
+}
+async function scanBlockchain(web3, chainName, mainBlockStart, lastBlock, maxUsers) {
+    let size = 30, users = [];
     let finishProcessing = false;
+    mainBlockStart = parseInt(mainBlockStart)
+    lastBlock = parseInt(lastBlock)
+    console.log(`mainBlockStart=${mainBlockStart} lastBlock=${lastBlock}`)
     for (let i = mainBlockStart; i < lastBlock; i += size) {
+        console.log(`${i}@${chainName} (${users.length} of ${maxUsers})`)
         if( finishProcessing ){
             console.log(`1) maxUsers ${maxUsers} reached for chain ${chainName}`);
             break;
         }
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // await new Promise(resolve => setTimeout(resolve, 1000));
         const from = i;
         const to = (i + size) - 1;
         try {
-            // emit RankClaimed(msg.sender, term, globalRank++, getCurrentAMP(), mintInfo.eaaRate, mintInfo.maturityTs);
-            await main.getPastEvents({fromBlock: from, toBlock: to},
-                async function(error, events){
-                    if (error) {
-                        console.log(error.toString());
-                    } else {
-                        for (let j = 0; j < events.length; j++) {
-                            const e = events[j];
-                            if (!e.event) continue;
-                            if (e.event != 'RankClaimed') continue;
-                            if( users.length >= maxUsers ){
-                                finishProcessing = true;
-                                console.log(`2) maxUsers ${maxUsers} reached for chain ${chainName}`);
-                                return;
-                            }
-                            // event RankClaimed(address indexed user, uint256 term, uint256 rank, uint AMP, uint EAA, uint maturity);
-                            // emit RankClaimed(msg.sender, term, globalRank++, getCurrentAMP(), mintInfo.eaaRate, mintInfo.maturityTs);
-                            const user = e.returnValues.user;
+            const params = {blockchain: chainName, fromBlock: from, toBlock: to};
+            const blocks = await provider.getBlocks(params);
+
+            for( let i in blocks.blocks ) {
+                const block = blocks.blocks[i]
+                for( let j in block.transactions ) {
+                    const transaction = block.transactions[j];
+                    for( let l in transaction.logs ){
+                        const log = transaction.logs[l];
+                        if( log.topics.indexOf(claimRankTopic) !== -1 ) {
+                            const user = transaction.from;
                             const minter = new web3.eth.Contract(abiMinter, user);
+                            let owner;
                             try{
-                                const owner = await minter.owner();
-                                if( owner && users.indexOf(owner) === -1 ){
-                                    users.push(users);
-                                }else if( user && users.indexOf(user) === -1 ){
-                                    users.push(users);
-                                }
-                                if( users.length >= maxUsers ){
-                                    console.log(`3) maxUsers ${maxUsers} reached for chain ${chainName}`);
-                                    finishProcessing = true;
-                                }
+                                owner = await minter.owner();
                             }catch(e){
-                                console.log(user, e.toString());
+                                // console.log(user, e.toString());
                             }
+                            if( owner && users.indexOf(owner) === -1 ){
+                                users.push(owner);
+                            }else if( users.indexOf(user) === -1 ){
+                                users.push(user);
+                            }
+                            console.log(` ${user}=${owner} (${users.length})`)
                         }
                     }
+                    if( users.length >= maxUsers ){
+                        console.log(`3) maxUsers ${maxUsers} reached for chain ${chainName}`);
+                        finishProcessing = true;
+                    }
                 }
-            );
+            }
         }catch(e){
             console.log(e.toString());
         }
     }
-    fs.writeFileSync(`./data/${chainName}.txt`, users.join('\n') );
+
+    const file = `./data/${chainName}.txt`;
+    console.log(users.length, file);
+    fs.writeFileSync(file, users.join('\n') );
 }
 
 main();
