@@ -1,6 +1,7 @@
 'use strict';
 const merkle = require("@openzeppelin/merkle-tree");
-import dataTestnet from './data/testnet.txt';
+// import dataTestnet from './data/testnet.txt';
+import dataMainnet from './data/mainnet.txt';
 
 const networkInfo = {
     "97": "bsc-testnet",
@@ -8,13 +9,19 @@ const networkInfo = {
     "5": "eth-testnet",
     "80001": "polygon-testnet",
     "4002": "ftm-testnet",
+
+    "56": "bsc",
+    "42161": "avax",
+    "1": "eth",
+    "137": "polygon",
+    "250": "ftm",
 }
 
 function checkProof(address) {
     if (!address) {
         return {error: `invalid address.`};
     }
-    const fileData = dataTestnet.trim().split('\n');
+    const fileData = dataMainnet.trim().split('\n');
     let airdrop_data = [];
     for (let i in fileData) {
         const lineData = fileData[i].trim();
