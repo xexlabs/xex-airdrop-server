@@ -15,8 +15,8 @@ async function main() {
     await processChain(2500, 'matic', '137', '80001');
     await processChain(2500, 'ftm', '250', '4002');
     await processChain(500, 'eth', '1', '5');
-    fs.writeFileSync('../proof/src/data/mainnet.txt', mainnet.join("\n"));
-    fs.writeFileSync('../proof/src/data/testnet.txt', testnet.join("\n"));
+    fs.writeFileSync('../xex-wl-server/data/mainnet.txt', mainnet.join("\n"));
+    fs.writeFileSync('../xex-wl-server/data/testnet.txt', testnet.join("\n"));
 }
 
 async function processChain(maxUsers, chainName, chainIdMainnet, chainIdTestnet) {
