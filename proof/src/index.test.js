@@ -4,7 +4,7 @@ const {expect} = require('@jest/globals');
 describe("Worker", () => {
 	it("return a proof", async () => {
 		const q = '?wallet=0x78B3Ec25D285F7a9EcA8Da8eb6b20Be4d5D70E84';
-		const res = await fetch(`http://127.0.0.1:8787/${q}`);
+		const res = await fetch(`https://127.0.0.1:8787/${q}`);
 		const r = await res.json();
 		console.log(r);
 		// expect(r.networkId).toBe('97');

@@ -6,6 +6,7 @@ const express = require('express')
 const app = express()
 const port = 8787
 const fs = require('fs');
+const cors = require('cors');
 const networkInfo = {
     "97": "bsc-testnet",
     "43113": "avax-testnet",
@@ -38,7 +39,7 @@ function checkProof(address) {
 }
 
 
-
+app.use(cors())
 app.get('/', function(req, res){
     const wallet = req.query.wallet;
     const proof = checkProof(wallet);
