@@ -1,6 +1,6 @@
 'use strict'
 const fs = require('fs');
-let mainnet = [], testnet = [];
+let mainnet = [], testnet = [], allAddresses = [];
 
 async function main() {
     /*
@@ -29,8 +29,12 @@ async function processChain(maxUsers, chainName, chainIdMainnet, chainIdTestnet)
         address = address.replaceAll('"', '');
         if (address.length !== 42) continue;
         if (i >= maxUsers) break;
-        mainnet.push(`${address},${chainIdMainnet}`);
-        testnet.push(`${address},${chainIdTestnet}`);
+        const mainetEntry = `${address},${chainIdMainnet}`;
+        const testnetEntry = `${address},${chainIdTestnet}`
+        if( allAddresses.indexOf(address) !== -1 ) continue;
+        mainnet.push(mainetEntry);
+        testnet.push(testnetEntry);
+        allAddresses.push(address);
     }
 }
 
@@ -45,8 +49,12 @@ async function wl(maxUsers, chainName, chainIdMainnet, chainIdTestnet) {
             address = address.replaceAll('"', '');
             if (address.length !== 42 || address.indexOf('0x') === -1) continue;
             if (maxUsers > 0 && i >= maxUsers) break;
-            mainnet.push(`${address},${chainIdMainnet}`);
-            testnet.push(`${address},${chainIdTestnet}`);
+            const mainetEntry = `${address},${chainIdMainnet}`;
+            const testnetEntry = `${address},${chainIdTestnet}`
+            if( allAddresses.indexOf(address) !== -1 ) continue;
+            mainnet.push(mainetEntry);
+            testnet.push(testnetEntry);
+            allAddresses.push(address);
         }
     }
 }
