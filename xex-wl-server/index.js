@@ -1,7 +1,9 @@
 'use strict';
 const merkle = require("@openzeppelin/merkle-tree");
-const dataFile = './data/testnet.txt';
-let MerkleTreeData;
+const dataFileTestnet = './data/testnet.txt';
+const dataFileMainnet = './data/mainnet.txt';
+let MerkleTreeTestnetData;
+let MerkleTreeMainnetData;
 const express = require('express')
 const app = express()
 const port = 8787
@@ -21,17 +23,18 @@ const networkInfo = {
     "250": "ftm",
 }
 
-function checkProof(address) {
+function checkProof(address, mainnet) {
     if (!address) {
         return {error: `invalid address.`};
     }
     const wallet = address.toLowerCase();
-    for (const [i, v] of MerkleTreeData.entries()) {
+    const tree = mainnet ? MerkleTreeMainnetData : MerkleTreeTestnetData;
+    for (const [i, v] of tree.entries()) {
         if (v[0] === wallet) {
-            const proof = MerkleTreeData.getProof(i);
+            const proof = tree.getProof(i);
             const networkId = v[1];
             const networkName = networkInfo[networkId];
-            console.log(`  proof found at ${i}, network: ${networkName} (${networkId}).`);
+            console.log(` ${wallet} proof found at ${i}, network: ${networkName} (${networkId}).`);
             return {networkId: networkId, networkName: networkName, proof: proof};
         }
     }
@@ -40,14 +43,19 @@ function checkProof(address) {
 
 
 app.use(cors())
-app.get('/', function(req, res){
+app.get('/testnet', function (req, res) {
     const wallet = req.query.wallet;
-    const proof = checkProof(wallet);
+    const proof = checkProof(wallet, false);
+    return res.json(proof);
+});
+app.get('/mainnet', function (req, res) {
+    const wallet = req.query.wallet;
+    const proof = checkProof(wallet, true);
     return res.json(proof);
 });
 
-app.listen(port, () => {
-    const rawData = fs.readFileSync(dataFile).toString('utf-8');
+function buildMerkleTree(file) {
+    const rawData = fs.readFileSync(file).toString('utf-8');
     const fileData = rawData.trim().split('\n');
     let airdrop_data = [];
     for (let i in fileData) {
@@ -60,6 +68,11 @@ app.listen(port, () => {
         airdrop_data.push([userData[0].toLowerCase(), userData[1]]);
     }
     const tree = merkle.StandardMerkleTree.of(airdrop_data, ["address", "uint256"]);
-    console.log('root', tree.root);
-    MerkleTreeData = merkle.StandardMerkleTree.load(tree.dump());
+    console.log(file, tree.root);
+    return merkle.StandardMerkleTree.load(tree.dump());
+}
+
+app.listen(port, () => {
+    MerkleTreeTestnetData = buildMerkleTree(dataFileTestnet);
+    MerkleTreeMainnetData = buildMerkleTree(dataFileMainnet);
 })

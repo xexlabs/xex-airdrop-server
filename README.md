@@ -1,4 +1,8 @@
-# Airdrop
-
-Merkle Root: `0x6362f8fcdd558ac55b3570b67fdb1d1673bd01bd53302e42f01377f102ac80a9`
-
+- minters: bsc = 208
+- minters: avax = 307
+- minters: polygon = 698
+- minters: ftm = 2179
+- minters: eth = 86
+- wl: eth = 1458
+- wl: polygon = 344
+- TOTAL: 5280
